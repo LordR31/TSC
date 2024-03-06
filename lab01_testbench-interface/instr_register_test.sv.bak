@@ -23,8 +23,6 @@ module instr_register_test
   parameter WRITE_NR = 20;
   parameter READ_NR = 20;
 
-  instruction_t iw_reg_test[0:31];
-
   int seed = 555;
 
   initial begin
@@ -60,7 +58,7 @@ module instr_register_test
       // the expected values to be read back
       @(posedge clk) read_pointer = i;
       @(negedge clk) print_results;
-      check_results;
+      @(negedge clk) check_results;
     end
 
     @(posedge clk) ;
@@ -85,11 +83,6 @@ module instr_register_test
     operand_b     <= $unsigned($random)%16;            // between 0 and 15
     opcode        <= opcode_t'($unsigned($random)%8);  // between 0 and 7, cast to opcode_t type
     write_pointer <= temp++;
-    $display("At write_pointer = %0d:\n", write_pointer);
-    $display("  opcode = %0d", opcode);
-    $display("  operand_a = %0d",   operand_a);
-    $display("  operand_b = %0d", operand_b);
-    iw_reg_test[write_pointer] = '{opcode,operand_a,operand_b,0};
   endfunction: randomize_transaction
 
   function void print_transaction;
@@ -109,29 +102,31 @@ module instr_register_test
   endfunction: print_results
 
   function void check_results;
-  result_t local_result;
-
-  case (iw_reg_test[read_pointer].opc)
+  result_t local_result = 0;
+  case (opcode)
         ZERO: local_result = 0;
-        PASSA: local_result = iw_reg_test[read_pointer].op_a;
-        PASSB: local_result = iw_reg_test[read_pointer].op_b;
-        ADD: local_result = iw_reg_test[read_pointer].op_a + iw_reg_test[read_pointer].op_b;
-        SUB: local_result = iw_reg_test[read_pointer].op_a - iw_reg_test[read_pointer].op_b;
-        MULT: local_result = iw_reg_test[read_pointer].op_a * iw_reg_test[read_pointer].op_b;
-        DIV: if(iw_reg_test[read_pointer].op_b == 0)
-              local_result = 0;
-            else
-              local_result = iw_reg_test[read_pointer].op_a / iw_reg_test[read_pointer].op_b;
-        MOD: local_result = iw_reg_test[read_pointer].op_a % iw_reg_test[read_pointer].op_b;
+        PASSA: local_result = operand_a;
+        PASSB: local_result = operand_b;
+        ADD: local_result = operand_a + operand_b;
+        SUB: local_result = operand_a - operand_b;
+        MULT:  local_result = operand_a * operand_b;
+        DIV: if(operand_b == 0) 
+                local_result = 0;
+              else
+                local_result = operand_a / operand_b;
+        
+        MOD: local_result = operand_a % operand_b;
         default: local_result = 63'bx;
       endcase
 
   if (local_result === instruction_word.result) 
-      $display("Result - OKAY!\n");
+      $display("Result - OKAY!");
+
       else 
-      $display("Result - NOT OKAY!\n");    
+      $display("Result - NOT OKAY!");    
+  
+    
 
   endfunction: check_results
-
 
 endmodule: instr_register_test
