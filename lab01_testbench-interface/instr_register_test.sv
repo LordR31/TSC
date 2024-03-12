@@ -63,6 +63,7 @@ module instr_register_test
       check_results;
     end
 
+
     @(posedge clk) ;
     $display("\n***********************************************************");
     $display(  "***  THIS IS NOT A SELF-CHECKING TESTBENCH (YET).  YOU  ***");
@@ -81,14 +82,14 @@ module instr_register_test
     // write_pointer values in a later lab
     //
     static int temp = 0;
-    operand_a     <= $random(seed)%16;                 // between -15 and 15
-    operand_b     <= $unsigned($random)%16;            // between 0 and 15
-    opcode        <= opcode_t'($unsigned($random)%8);  // between 0 and 7, cast to opcode_t type
-    write_pointer <= temp++;
-    $display("At write_pointer = %0d:\n", write_pointer);
+    operand_a     = $random(seed)%16;                 // between -15 and 15
+    operand_b     = $unsigned($random)%16;            // between 0 and 15
+    opcode        = opcode_t'($unsigned($random)%8);  // between 0 and 7, cast to opcode_t type
+    write_pointer = temp++;
+    $display("At write_pointer = %0d:", write_pointer);
     $display("  opcode = %0d", opcode);
     $display("  operand_a = %0d",   operand_a);
-    $display("  operand_b = %0d", operand_b);
+    $display("  operand_b = %0d\n", operand_b);
     iw_reg_test[write_pointer] = '{opcode,operand_a,operand_b,0};
   endfunction: randomize_transaction
 
