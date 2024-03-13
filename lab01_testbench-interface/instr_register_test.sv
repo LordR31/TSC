@@ -20,19 +20,26 @@ module instr_register_test
 
   timeunit 1ns/1ns;
 
-  parameter WRITE_NR = 20;
-  parameter READ_NR = 20;
+  parameter WRITE_NR = 50;
+  parameter READ_NR = 50;
 
+  parameter WRITE_ORDER = 2; // 0 - Incremental
+                             // 1 - Decremental
+                             // 2 - RANDOM
+
+  parameter READ_ORDER = 2; // 0 - Incremental
+                            // 1 - Decremental
+                            // 2 - RANDOM
+  
   instruction_t iw_reg_test[0:31];
+  logic [31:0] pass_counter;
 
   int seed = 555;
 
   initial begin
     $display("\n\n***********************************************************");
-    $display(    "***  THIS IS NOT A SELF-CHECKING TESTBENCH (YET).  YOU  ***");
-    $display(    "***  NEED TO VISUALLY VERIFY THAT THE OUTPUT VALUES     ***");
-    $display(    "***  MATCH THE INPUT VALUES FOR EACH REGISTER LOCATION  ***");
-    $display(    "***********************************************************");
+    $display(  "***         THIS IS  A SELF-CHECKING TESTBENCH          ***");
+    $display(  "***********************************************************");
 
     $display("\nReseting the instruction register...");
     write_pointer  = 5'h00;         // initialize write pointer
@@ -58,17 +65,22 @@ module instr_register_test
       // later labs will replace this loop with iterating through a
       // scoreboard to determine which addresses were written and
       // the expected values to be read back
-      @(posedge clk) read_pointer = i;
+      @(posedge clk) case (READ_ORDER)
+        0 : read_pointer = i % 32;
+        1 : read_pointer = 31 - (i % 32);
+        2 : read_pointer = $random($random) % 32;
+      endcase
+      
       @(negedge clk) print_results;
       check_results;
+
+      $display("Final results: %0d\n", pass_counter);
     end
 
 
     @(posedge clk) ;
     $display("\n***********************************************************");
-    $display(  "***  THIS IS NOT A SELF-CHECKING TESTBENCH (YET).  YOU  ***");
-    $display(  "***  NEED TO VISUALLY VERIFY THAT THE OUTPUT VALUES     ***");
-    $display(  "***  MATCH THE INPUT VALUES FOR EACH REGISTER LOCATION  ***");
+    $display(  "***         THIS IS  A SELF-CHECKING TESTBENCH          ***");
     $display(  "***********************************************************\n");
     $finish;
   end
@@ -81,12 +93,20 @@ module instr_register_test
     // addresses of 0, 1 and 2.  This will be replaceed with randomizeed
     // write_pointer values in a later lab
     //
-    static int temp = 0;
+    static int temp_i = 0;
+    static int temp_d = 31;
+
     operand_a     = $random(seed)%16;                 // between -15 and 15
     operand_b     = $unsigned($random)%16;            // between 0 and 15
     opcode        = opcode_t'($unsigned($random)%8);  // between 0 and 7, cast to opcode_t type
-    write_pointer = temp++;
-    $display("At write_pointer = %0d:", write_pointer);
+    
+    case (WRITE_ORDER)
+      0 : write_pointer = temp_i++;
+      1 : write_pointer = temp_d--;
+      2 : write_pointer = $random($random)%32;
+    endcase
+
+    $display("At write_pointer = %0d, timp %0t:", write_pointer, $time);
     $display("  opcode = %0d", opcode);
     $display("  operand_a = %0d",   operand_a);
     $display("  operand_b = %0d\n", operand_b);
@@ -111,6 +131,35 @@ module instr_register_test
 
   function void check_results;
   result_t local_result;
+  logic [4-1:0] pass_flags;
+
+  if(instruction_word.op_a == iw_reg_test[read_pointer].op_a) begin
+    $display("PASS OP_A!");
+    pass_flags[0] = 1'b1;
+  end
+  else begin
+    $display("FAIL OP_A!"); 
+    pass_flags[0] = 1'b0;
+  end
+
+  if(instruction_word.op_b == iw_reg_test[read_pointer].op_b) begin
+    $display("PASS OP_B!");
+    pass_flags[1] = 1'b1;
+  end
+  else begin
+    $display("FAIL OP_B!"); 
+    pass_flags[1] = 1'b0;
+  end
+  
+  if(instruction_word.opc == iw_reg_test[read_pointer].opc) begin
+    $display("PASS OPC!");
+    pass_flags[2] = 1'b1;
+  end
+  else begin
+    $display("FAIL OPC!");
+    pass_flags[2] = 1'b0;
+  end 
+
 
   case (iw_reg_test[read_pointer].opc)
         ZERO: local_result = 0;
@@ -127,10 +176,17 @@ module instr_register_test
         default: local_result = 63'bx;
       endcase
 
-  if (local_result === instruction_word.result) 
-      $display("Result - OKAY!\n");
-      else 
-      $display("Result - NOT OKAY!\n");    
+  if (local_result === instruction_word.result) begin
+      $display("PASS RESULT!\n");
+      pass_flags[3] = 1'b1;
+  end
+    else begin
+      $display("FAIL RESULT!\n");    
+      pass_flags[3] = 1'b0;
+    end
+  
+  if(&pass_flags)
+    pass_counter = pass_counter + 1;
 
   endfunction: check_results
 
