@@ -20,19 +20,20 @@ module instr_register_test
 
   timeunit 1ns/1ns;
 
-  parameter WRITE_NR = 50;
-  parameter READ_NR = 50;
+  parameter WRITE_NR = 31;
+  parameter READ_NR = 31;
 
-  parameter WRITE_ORDER = 2; // 0 - Incremental
+  parameter WRITE_ORDER = 0; // 0 - Incremental
                              // 1 - Decremental
                              // 2 - RANDOM
 
-  parameter READ_ORDER = 2; // 0 - Incremental
+  parameter READ_ORDER = 0; // 0 - Incremental
                             // 1 - Decremental
                             // 2 - RANDOM
   
   instruction_t iw_reg_test[0:31];
-  logic [31:0] pass_counter;
+  logic [31:0] fail_counter = 0;
+  logic [31:0] fail_location; 
 
   int seed = 555;
 
@@ -73,12 +74,19 @@ module instr_register_test
       
       @(negedge clk) print_results;
       check_results;
-
-      $display("Final results: %0d\n", pass_counter);
     end
 
 
     @(posedge clk) ;
+    $display("Number of failed tests: %0d", fail_counter);
+
+    for(int i = 0; i < 31; i++) begin
+      if (fail_location[i] === 1'b1) begin
+        $display("Fail at read_pointer %0d", i);
+      end
+    end
+
+
     $display("\n***********************************************************");
     $display(  "***         THIS IS  A SELF-CHECKING TESTBENCH          ***");
     $display(  "***********************************************************\n");
@@ -131,33 +139,35 @@ module instr_register_test
 
   function void check_results;
   result_t local_result;
-  logic [4-1:0] pass_flags;
+  logic pass_flag;
 
-  if(instruction_word.op_a == iw_reg_test[read_pointer].op_a) begin
+  pass_flag = 1'b1;
+
+  if(instruction_word.op_a === iw_reg_test[read_pointer].op_a) begin
     $display("PASS OP_A!");
-    pass_flags[0] = 1'b1;
   end
   else begin
     $display("FAIL OP_A!"); 
-    pass_flags[0] = 1'b0;
+    pass_flag = 1'b0;
+    fail_location[read_pointer] = 1'b1;
   end
 
-  if(instruction_word.op_b == iw_reg_test[read_pointer].op_b) begin
+  if(instruction_word.op_b === iw_reg_test[read_pointer].op_b) begin
     $display("PASS OP_B!");
-    pass_flags[1] = 1'b1;
   end
   else begin
     $display("FAIL OP_B!"); 
-    pass_flags[1] = 1'b0;
+    pass_flag = 1'b0;
+    fail_location[read_pointer] = 1'b1;
   end
   
-  if(instruction_word.opc == iw_reg_test[read_pointer].opc) begin
+  if(instruction_word.opc === iw_reg_test[read_pointer].opc) begin
     $display("PASS OPC!");
-    pass_flags[2] = 1'b1;
   end
   else begin
     $display("FAIL OPC!");
-    pass_flags[2] = 1'b0;
+    pass_flag = 1'b0;
+    fail_location[read_pointer] = 1'b1;
   end 
 
 
@@ -178,15 +188,15 @@ module instr_register_test
 
   if (local_result === instruction_word.result) begin
       $display("PASS RESULT!\n");
-      pass_flags[3] = 1'b1;
   end
     else begin
       $display("FAIL RESULT!\n");    
-      pass_flags[3] = 1'b0;
+      pass_flag = 1'b0;
+      fail_location[read_pointer] = 1'b1;
     end
   
-  if(&pass_flags)
-    pass_counter = pass_counter + 1;
+  if(pass_flag === 1'b0)
+    fail_counter = fail_counter + 1;
 
   endfunction: check_results
 
