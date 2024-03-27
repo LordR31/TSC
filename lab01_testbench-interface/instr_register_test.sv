@@ -19,6 +19,9 @@ module instr_register_test
   );
 
   timeunit 1ns/1ns;
+  parameter TEST_CASE = "test_case";
+
+  // fopen ("regression" "a");
 
   parameter WRITE_NR = 31;
   parameter READ_NR = 31;
