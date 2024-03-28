@@ -19,9 +19,8 @@ module instr_register_test
   );
 
   timeunit 1ns/1ns;
+  
   parameter TEST_CASE = "test_case";
-
-  // fopen ("regression" "a");
 
   parameter WRITE_NR = 31;
   parameter READ_NR = 31;
@@ -36,11 +35,15 @@ module instr_register_test
   
   instruction_t iw_reg_test[0:31];
   logic [31:0] fail_counter = 0;
-  logic [31:0] fail_location; 
+  int fail_location [31:0]; 
 
   int seed = 555;
+  integer file;
 
   initial begin
+    foreach(fail_location[i])
+      fail_location[i] = 0;
+
     $display("\n\n***********************************************************");
     $display(  "***         THIS IS  A SELF-CHECKING TESTBENCH          ***");
     $display(  "***********************************************************");
@@ -55,7 +58,6 @@ module instr_register_test
 
     $display("\nWriting values to register stack...");
     @(posedge clk) load_en = 1'b1;  // enable writing to register
-    // repeat (3) begin     Andrei Visoiu - Modificare - 06.03.2024
     repeat (WRITE_NR) begin
       @(posedge clk) randomize_transaction;
       @(negedge clk) print_transaction;
@@ -64,7 +66,6 @@ module instr_register_test
 
     // read back and display same three register locations
     $display("\nReading back the same register locations written...");
-    // for (int i=0; i<=2; i++) begin Andrei Visoiu - Modificare - 06.03.2024
     for (int i=0; i<READ_NR; i++) begin 
       // later labs will replace this loop with iterating through a
       // scoreboard to determine which addresses were written and
@@ -79,16 +80,14 @@ module instr_register_test
       check_results;
     end
 
-
     @(posedge clk) ;
     $display("Number of failed tests: %0d", fail_counter);
-
-    for(int i = 0; i < 31; i++) begin
-      if (fail_location[i] === 1'b1) begin
-        $display("Fail at read_pointer %0d", i);
-      end
-    end
-
+    print_fail_locations;
+    
+    file = $fopen ("../transcripts/regression", "a");
+    $fdisplay(file, "Case name: %s", TEST_CASE);
+    $fdisplay(file, "Number of failed tests: %0d\n", fail_counter);
+    $fclose(file);
 
     $display("\n***********************************************************");
     $display(  "***         THIS IS  A SELF-CHECKING TESTBENCH          ***");
@@ -97,13 +96,6 @@ module instr_register_test
   end
 
   function void randomize_transaction;
-    // A later lab will replace this function with SystemVerilog
-    // constrained random values
-    //
-    // The stactic temp variable is required in order to write to fixed
-    // addresses of 0, 1 and 2.  This will be replaceed with randomizeed
-    // write_pointer values in a later lab
-    //
     static int temp_i = 0;
     static int temp_d = 31;
 
@@ -135,10 +127,16 @@ module instr_register_test
   function void print_results;
     $display("Read from register location %0d: ", read_pointer);
     $display("  opcode = %0d (%s)", instruction_word.opc, instruction_word.opc.name);
-    $display("  operand_a = %0d",   instruction_word.op_a);
-    $display("  operand_b = %0d", instruction_word.op_b);
-    $display("  result = %0d\n", instruction_word.result);
+    $display("  operand_a = %0d, \t local = %0d",   instruction_word.op_a, iw_reg_test[read_pointer].op_a);
+    $display("  operand_b = %0d, \t local = %0d", instruction_word.op_b, iw_reg_test[read_pointer].op_b);
+    $display("  result = %0d, \t local = %0d\n", instruction_word.result, iw_reg_test[read_pointer].result);
   endfunction: print_results
+
+  function void print_fail_locations;
+    for(int i = 0; i < 31; i++)
+      if (fail_location[i] > 0)
+        $display("Fails at read_pointer %0d: %0d", i, fail_location[i]/4);
+  endfunction: print_fail_locations
 
   function void check_results;
   result_t local_result;
@@ -147,32 +145,31 @@ module instr_register_test
   pass_flag = 1'b1;
 
   if(instruction_word.op_a === iw_reg_test[read_pointer].op_a) begin
-    $display("PASS OP_A!");
+    $display("  PASS OP_A!");
   end
   else begin
-    $display("FAIL OP_A!"); 
+    $display("  FAIL OP_A!"); 
     pass_flag = 1'b0;
-    fail_location[read_pointer] = 1'b1;
+    fail_location[read_pointer] = fail_location[read_pointer] + 1;
   end
 
   if(instruction_word.op_b === iw_reg_test[read_pointer].op_b) begin
-    $display("PASS OP_B!");
+    $display("  PASS OP_B!");
   end
   else begin
-    $display("FAIL OP_B!"); 
+    $display("  FAIL OP_B!"); 
     pass_flag = 1'b0;
-    fail_location[read_pointer] = 1'b1;
+    fail_location[read_pointer] = fail_location[read_pointer] + 1;
   end
   
   if(instruction_word.opc === iw_reg_test[read_pointer].opc) begin
-    $display("PASS OPC!");
+    $display("  PASS OPC!");
   end
   else begin
-    $display("FAIL OPC!");
+    $display("  FAIL OPC!");
     pass_flag = 1'b0;
-    fail_location[read_pointer] = 1'b1;
+    fail_location[read_pointer] = fail_location[read_pointer] + 1;
   end 
-
 
   case (iw_reg_test[read_pointer].opc)
         ZERO: local_result = 0;
@@ -190,18 +187,17 @@ module instr_register_test
       endcase
 
   if (local_result === instruction_word.result) begin
-      $display("PASS RESULT!\n");
+      $display("  PASS RESULT!\n");
   end
     else begin
-      $display("FAIL RESULT!\n");    
+      $display("  FAIL RESULT!\n");    
       pass_flag = 1'b0;
-      fail_location[read_pointer] = 1'b1;
+      fail_location[read_pointer] = fail_location[read_pointer] + 1;
     end
   
   if(pass_flag === 1'b0)
     fail_counter = fail_counter + 1;
 
   endfunction: check_results
-
 
 endmodule: instr_register_test
