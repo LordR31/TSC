@@ -1,9 +1,20 @@
-call run_test.bat 100 100 0 0 inc.inc c 
-call run_test.bat 100 100 0 1 inc.dec c 
-call run_test.bat 100 100 1 2 inc.rnd c
-call run_test.bat 100 100 1 0 dec.inc c
-call run_test.bat 100 100 1 1 dec.dec c
-call run_test.bat 100 100 1 2 dec.rnd c
-call run_test.bat 100 100 2 0 rnd.inc c
-call run_test.bat 100 100 2 1 rnd.dec c
-call run_test.bat 100 100 2 2 rnd.rnd c
+@REM call run_test.bat 100 100 0 0 inc.inc c 
+@REM call run_test.bat 100 100 0 1 inc.dec c 
+@REM call run_test.bat 100 100 1 2 inc.rnd c
+@REM call run_test.bat 100 100 1 0 dec.inc c
+@REM call run_test.bat 100 100 1 1 dec.dec c
+@REM call run_test.bat 100 100 1 2 dec.rnd c
+@REM call run_test.bat 100 100 2 0 rnd.inc c
+@REM call run_test.bat 100 100 2 1 rnd.dec c
+@REM call run_test.bat 100 100 2 2 rnd.rnd c
+call run_test.bat 50 32 2 2 case1 c 25427660
+call run_test.bat 50 32 2 2 case2 c 82437
+call run_test.bat 50 32 2 2 case3 c 11751186
+call run_test.bat 50 32 2 2 case4 c 29844332
+call run_test.bat 50 32 2 2 case5 c 34129593
+call run_test.bat 50 32 2 2 case6 c 14423710
+call run_test.bat 50 32 2 2 case7 c 491106
+call run_test.bat 50 32 2 2 case8 c 26807111
+call run_test.bat 50 32 2 2 case9 c 33319011
+call run_test.bat 50 32 2 2 case10 c 2047380
+

@@ -33,14 +33,23 @@ module instr_register_test
                             // 1 - Decremental
                             // 2 - RANDOM
   
+ parameter SEED_VAL = 1234;
+
   instruction_t iw_reg_test[0:31];
   logic [31:0] fail_counter = 0;
   int fail_location [31:0]; 
 
-  int seed = 555;
+  int seed = SEED_VAL;
   integer file;
 
   initial begin
+    foreach(iw_reg_test[i])begin
+      iw_reg_test[i].op_a = opc:ZERO;
+      iw_reg_test[i].op_a = 0;
+      iw_reg_test[i].op_b = 0;
+      iw_reg_test[i].result = 0;
+    end
+
     foreach(fail_location[i])
       fail_location[i] = 0;
 
@@ -126,7 +135,7 @@ module instr_register_test
 
   function void print_results;
     $display("Read from register location %0d: ", read_pointer);
-    $display("  opcode = %0d (%s)", instruction_word.opc, instruction_word.opc.name);
+    $display("  opcode = %0d (%s) \t local = %s", instruction_word.opc, instruction_word.opc.name, iw_reg_test[read_pointer].opc.name);
     $display("  operand_a = %0d, \t local = %0d",   instruction_word.op_a, iw_reg_test[read_pointer].op_a);
     $display("  operand_b = %0d, \t local = %0d", instruction_word.op_b, iw_reg_test[read_pointer].op_b);
     $display("  result = %0d, \t local = %0d\n", instruction_word.result, iw_reg_test[read_pointer].result);
