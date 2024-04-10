@@ -7,7 +7,7 @@
 @REM call run_test.bat 100 100 2 0 rnd.inc c
 @REM call run_test.bat 100 100 2 1 rnd.dec c
 @REM call run_test.bat 100 100 2 2 rnd.rnd c
-call run_test.bat 50 32 2 2 case1 c 25427660
+call run_test.bat 32 32 0 0 case1 c 25427660
 call run_test.bat 50 32 2 2 case2 c 82437
 call run_test.bat 50 32 2 2 case3 c 11751186
 call run_test.bat 50 32 2 2 case4 c 29844332
@@ -16,5 +16,24 @@ call run_test.bat 50 32 2 2 case6 c 14423710
 call run_test.bat 50 32 2 2 case7 c 491106
 call run_test.bat 50 32 2 2 case8 c 26807111
 call run_test.bat 50 32 2 2 case9 c 33319011
-call run_test.bat 50 32 2 2 case10 c 2047380
-
+call run_test.bat 50 32 2 2 case10 c 8663348
+call run_test.bat 50 32 2 2 case11 c 3156796
+call run_test.bat 50 32 2 2 case12 c 3064115
+call run_test.bat 50 32 2 2 case13 c 4657634
+call run_test.bat 50 32 2 2 case14 c 618364
+call run_test.bat 50 32 2 2 case15 c 7305881
+call run_test.bat 50 32 2 2 case16 c 1081799
+call run_test.bat 50 32 2 2 case17 c 4296595
+call run_test.bat 50 32 2 2 case18 c 1764956
+call run_test.bat 50 32 2 2 case19 c 917937
+call run_test.bat 50 32 2 2 case20 c 889357
+call run_test.bat 50 32 2 2 case21 c 6167431
+call run_test.bat 50 32 2 2 case22 c 4231462
+call run_test.bat 50 32 2 2 case23 c 6656047
+call run_test.bat 50 32 2 2 case24 c 1085558
+call run_test.bat 50 32 2 2 case25 c 3827946
+call run_test.bat 50 32 2 2 case26 c 382021
+call run_test.bat 50 32 2 2 case27 c 6542617
+call run_test.bat 50 32 2 2 case28 c 2245349
+call run_test.bat 50 32 2 2 case29 c 7639215
+call run_test.bat 50 32 2 2 case30 c 6080950

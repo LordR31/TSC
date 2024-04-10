@@ -42,8 +42,20 @@ import instr_register_pkg::*;  // user-defined types are defined in instr_regist
               iw_reg[write_pointer] = '{opcode,operand_a,operand_b, 0};
             else
               iw_reg[write_pointer] = '{opcode,operand_a,operand_b, operand_a / operand_b};
-        MOD: iw_reg[write_pointer] = '{opcode,operand_a,operand_b, operand_a % operand_b};
-        default: iw_reg[write_pointer] = '{opcode,operand_a,operand_b, 63'bx};
+        MOD:
+            if(operand_b == 0)
+              iw_reg[write_pointer] = '{opcode, operand_a, operand_b, 0};
+            else
+              iw_reg[write_pointer] = '{opcode,operand_a,operand_b, operand_a % operand_b};
+        POW:
+            if(operand_a == 0)
+              iw_reg[write_pointer] = '{opcode, operand_a, operand_b, 0};
+            else
+              if(operand_b == 0)
+                iw_reg[write_pointer] = '{opcode, operand_a, operand_b, 1};
+              else
+                iw_reg[write_pointer] = '{opcode, operand_a, operand_b, operand_a**operand_b};
+        // default: iw_reg[write_pointer] = '{opcode,operand_a,operand_b, 0};
       endcase
     end
     

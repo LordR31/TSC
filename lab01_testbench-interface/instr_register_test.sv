@@ -44,10 +44,7 @@ module instr_register_test
 
   initial begin
     foreach(iw_reg_test[i])begin
-      iw_reg_test[i].op_a = opc:ZERO;
-      iw_reg_test[i].op_a = 0;
-      iw_reg_test[i].op_b = 0;
-      iw_reg_test[i].result = 0;
+      iw_reg_test[i] = '{opc:ZERO, default:0};
     end
 
     foreach(fail_location[i])
@@ -73,20 +70,15 @@ module instr_register_test
     end
     @(posedge clk) load_en = 1'b0;  // turn-off writing to register
 
-    // read back and display same three register locations
     $display("\nReading back the same register locations written...");
     for (int i=0; i<READ_NR; i++) begin 
-      // later labs will replace this loop with iterating through a
-      // scoreboard to determine which addresses were written and
-      // the expected values to be read back
       @(posedge clk) case (READ_ORDER)
         0 : read_pointer = i % 32;
         1 : read_pointer = 31 - (i % 32);
         2 : read_pointer = $random($random) % 32;
       endcase
-      
+      @(negedge clk) check_results;
       @(negedge clk) print_results;
-      check_results;
     end
 
     @(posedge clk) ;
@@ -110,7 +102,7 @@ module instr_register_test
 
     operand_a     = $random(seed)%16;                 // between -15 and 15
     operand_b     = $unsigned($random)%16;            // between 0 and 15
-    opcode        = opcode_t'($unsigned($random)%8);  // between 0 and 7, cast to opcode_t type
+    opcode        = opcode_t'($unsigned($random)%9);  // between 0 and 8, cast to opcode_t type
     
     case (WRITE_ORDER)
       0 : write_pointer = temp_i++;
@@ -148,7 +140,6 @@ module instr_register_test
   endfunction: print_fail_locations
 
   function void check_results;
-  result_t local_result;
   logic pass_flag;
 
   pass_flag = 1'b1;
@@ -181,21 +172,31 @@ module instr_register_test
   end 
 
   case (iw_reg_test[read_pointer].opc)
-        ZERO: local_result = 0;
-        PASSA: local_result = iw_reg_test[read_pointer].op_a;
-        PASSB: local_result = iw_reg_test[read_pointer].op_b;
-        ADD: local_result = iw_reg_test[read_pointer].op_a + iw_reg_test[read_pointer].op_b;
-        SUB: local_result = iw_reg_test[read_pointer].op_a - iw_reg_test[read_pointer].op_b;
-        MULT: local_result = iw_reg_test[read_pointer].op_a * iw_reg_test[read_pointer].op_b;
+        ZERO: iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, 0};
+        PASSA: iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_a};
+        PASSB: iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_b};
+        ADD: iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_a + iw_reg_test[read_pointer].op_b};
+        SUB: iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_a - iw_reg_test[read_pointer].op_b};
+        MULT: iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_a * iw_reg_test[read_pointer].op_b};
         DIV: if(iw_reg_test[read_pointer].op_b == 0)
-              local_result = 0;
+              iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, 0};
             else
-              local_result = iw_reg_test[read_pointer].op_a / iw_reg_test[read_pointer].op_b;
-        MOD: local_result = iw_reg_test[read_pointer].op_a % iw_reg_test[read_pointer].op_b;
-        default: local_result = 63'bx;
+              iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_a / iw_reg_test[read_pointer].op_b};
+        MOD:
+            if(iw_reg_test[read_pointer].op_b == 0)
+              iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, 0};
+            else
+              iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_a % iw_reg_test[read_pointer].op_b};
+        POW:
+            if(iw_reg_test[read_pointer].op_a == 0)
+              iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, 0};
+            else
+              if(iw_reg_test[read_pointer].op_b == 0)
+                iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, 1};
+              else
+                iw_reg_test[read_pointer] = '{iw_reg_test[read_pointer].opc, iw_reg_test[read_pointer].op_a, iw_reg_test[read_pointer].op_b, iw_reg_test[read_pointer].op_a**iw_reg_test[read_pointer].op_b};
       endcase
-
-  if (local_result === instruction_word.result) begin
+  if (iw_reg_test[read_pointer].result === instruction_word.result) begin
       $display("  PASS RESULT!\n");
   end
     else begin
